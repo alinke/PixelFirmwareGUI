@@ -2,13 +2,13 @@ package com.ledpixelart.firmware;
 
 
 
-/*import ioio.lib.api.DigitalOutput;
+import ioio.lib.api.DigitalOutput;
 import ioio.lib.api.IOIO;
 import ioio.lib.api.IOIO.VersionType;
 import ioio.lib.api.exception.ConnectionLostException;
 import ioio.lib.util.BaseIOIOLooper;
 import ioio.lib.util.IOIOLooper;
-import ioio.lib.util.pc.IOIOSwingApp;*/
+import ioio.lib.util.pc.IOIOSwingApp;
 
 import ioio.lib.util.IOIOLooper;
 import ioio.lib.util.pc.IOIOSwingApp;
@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.FlowLayout;
@@ -59,8 +60,9 @@ import org.eclipse.swt.widgets.Text;
 
 import java.awt.FlowLayout;
 
-public class pixelfirmware extends IOIOSwingApp implements ActionListener {
-//public class pixelfirmware implements ActionListener {
+//public class pixelfirmware extends IOIOSwingApp  {
+//public class pixelfirmware extends IOIOSwingApp implements ActionListener {
+public class pixelfirmware  {
 
 	private static final String BUTTON_PRESSED = "bp";
 	
@@ -68,9 +70,9 @@ public class pixelfirmware extends IOIOSwingApp implements ActionListener {
 	 
 	public static String pixelHardwareID = "";
 	    
-	//private static VersionType v;
+	private static VersionType v;
 	
-	private static JTextArea mainText;
+	
 	
 	private static final int ESTABLISH_CONNECTION = 0x00;
 	private static final int CHECK_INTERFACE = 0x01;
@@ -112,51 +114,66 @@ public class pixelfirmware extends IOIOSwingApp implements ActionListener {
      
     private JLabel label;
     private JTextField textField;
-    private JButton button;
+   // private JButton button;
      
     private JFileChooser fileChooser;
+    
+    private static JTextArea mainText;
+    private static JTextArea portText; 
      
     private int mode;
     public static final int MODE_OPEN = 1;
     public static final int MODE_SAVE = 2; //save is not used in this program
     
     private JFilePicker filePicker;
+    private static JFrame frame;
+    private Container contentPane;
+    private static JButton versionButton;
+    private static JButton upgradeButton;
     
     private static String combinedText;
     private static String firmwareFilePath;
 
 	// Boilerplate main(). Copy-paste this code into any IOIOapplication.
 	public static void main(String[] args) throws Exception {
-		new pixelfirmware().go(args);
+		//new pixelfirmware().go(args);
+		setupGUI();
 		
 	}
 
-	protected boolean ledOn_;
+//	protected boolean ledOn_;
 
-	@Override
-	protected Window createMainWindow(String args[]) {
+	
+	//protected Window createMainWindow(String args[]) {
+	public static void setupGUI() {
 		// Use native look and feel.
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch (Exception e) {
 		}
 
-		JFrame frame = new JFrame("PIXEL Firmware Upgrade");
+		frame = new JFrame("PIXEL Firmware Upgrade");
 		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
 		Container contentPane = frame.getContentPane();
 		contentPane.setLayout(new BoxLayout(contentPane, BoxLayout.PAGE_AXIS));
 		
+		portText = new JTextArea("Overwrite here with PIXEL's Port");
+		portText.setBackground(Color.BLUE);
+		portText.setForeground(Color.WHITE);
+		contentPane.add(portText);	
+		
 		mainText = new JTextArea("Searching for PIXEL...");
 	    //mainText.setFont(new Font("Serif", Font.ITALIC, 16));
 		mainText.setLineWrap(true);
 		mainText.setWrapStyleWord(true);
+		mainText.setEditable(false);
 		contentPane.add(mainText);	
 		
 		//contentPane.setLayout(new FlowLayout());
 		 
         // set up a file picker component
-        JFilePicker filePicker = new JFilePicker("Pick a file", "Browse...");
+        JFilePicker filePicker = new JFilePicker("Select Firmware File", "Browse...");
         filePicker.setMode(JFilePicker.MODE_OPEN);
         filePicker.addFileTypeFilter(".ioioapp", "Firmware Files");
        // filePicker.addFileTypeFilter(".mp4", "MPEG-4 Videos");
@@ -171,14 +188,19 @@ public class pixelfirmware extends IOIOSwingApp implements ActionListener {
        // contentPane.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
      //   contentPane.setSize(520, 100);
        //contentPane.setLocationRelativeTo(null);    // center on screen
-
 		
-		JButton button = new JButton("Upgrade");
-		button.setAlignmentX(Component.CENTER_ALIGNMENT);
-		button.setActionCommand(BUTTON_PRESSED);
-		button.addActionListener(this);
+		versionButton = new JButton("Check Firmware Version");
+		versionButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+		contentPane.add(versionButton);
+		
+		upgradeButton = new JButton("Upgrade Firmware");
+		upgradeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+		contentPane.add(upgradeButton);
+		//versionButton.setActionCommand(BUTTON_PRESSED);
+		
 		contentPane.add(Box.createVerticalGlue());
-		contentPane.add(button);
+		contentPane.add(versionButton);
+		contentPane.add(upgradeButton);
 		contentPane.add(Box.createVerticalGlue());
 
 		// Display the window.
@@ -186,11 +208,90 @@ public class pixelfirmware extends IOIOSwingApp implements ActionListener {
 		frame.setLocationRelativeTo(null); // center it
 		frame.setVisible(true);
 		
-		return frame;
+		versionButton.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e){
+            	/*firmwareFilePath = JFilePicker.getSelectedFilePath();
+    			combinedText = combinedText + "\n" + firmwareFilePath + "\n";
+    		    mainText.setText(combinedText);*/
+    		    
+    		   // portName_ = "/dev/tty.usbmodem1411"; 
+    		    portName_ = portText.getText();
+    		    command_ = Command.FINGERPRINT;
+    		    force_ = true;
+    		    
+    		    upgradeButton.setEnabled(false);
+    		    versionButton.setEnabled(false);
+    		   
+    				try {
+						connect(portName_);
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+						combinedText = combinedText + "Could not find PIXEL" + "\n";
+		    		    mainText.setText(combinedText);
+					} catch (ProtocolException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+						combinedText = combinedText + "Could not find PIXEL" + "\n";
+		    		    mainText.setText(combinedText);
+					}
+    			
+    		    versionsCommand();
+    		    
+    		   // contentPane.showMessageDialog(frame, "thank you for using java");
+    
+            }
+        });
+		
+		upgradeButton.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e){
+            	firmwareFilePath = JFilePicker.getSelectedFilePath();
+    			combinedText = combinedText + "\n" + firmwareFilePath + "\n";
+    		    mainText.setText(combinedText);
+    		    
+    		    portName_ = "/dev/tty.usbmodem1411"; 
+    		    command_ = Command.WRITE;
+    		    force_ = true;
+    		    
+    		    upgradeButton.setEnabled(false);
+    		    versionButton.setEnabled(false);
+    		   
+    				try {
+						connect(portName_);
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					} catch (ProtocolException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+    			
+    		    try {
+					writeCommand();
+				} catch (NoSuchAlgorithmException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (ProtocolException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+    		    
+    		   // contentPane.showMessageDialog(frame, "thank you for using java");
+    
+            }
+        });
+		
+		
+		
+		//return frame;
 	}
 	
-	@Override
-	public void actionPerformed(ActionEvent event) {
+	/*public void actionPerformed(ActionEvent event) {
 		if (event.getActionCommand().equals(BUTTON_PRESSED)) {
 			//ledOn_ = ((JToggleButton) event.getSource()).isSelected();
 			firmwareFilePath = filePicker.getSelectedFilePath();
@@ -213,9 +314,15 @@ public class pixelfirmware extends IOIOSwingApp implements ActionListener {
 			}
 			
 		    versionsCommand();
+		    try {
+				hardReset();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		   
 		    
-		  /*  try {
+		    try {
 				connect(portName_);
 				switch (command_) {
 				case VERSIONS:
@@ -244,11 +351,11 @@ public class pixelfirmware extends IOIOSwingApp implements ActionListener {
 			} catch (NoSuchAlgorithmException e) {
 				System.err.println("System cannot calculate MD5. Cannot proceed.");
 				System.exit(5);
-			}*/
+			}
 		    
 	
 		}
-	}
+	}*/
 	
 	private void runFirmwareUpdate() {
 		combinedText = "PIXEL FOUND" + "\n"
@@ -529,12 +636,28 @@ public class pixelfirmware extends IOIOSwingApp implements ActionListener {
 	private static void connect(String port) throws IOException,
 			ProtocolException {
 		connection_ = new SerialPortIOIOConnection(port);
-		connection_.waitForConnect();
-		out_ = connection_.getOutputStream();
-		in_ = connection_.getInputStream();
+		try {
+			connection_.waitForConnect();
+		} catch (ConnectionLostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		try {
+			out_ = connection_.getOutputStream();
+		} catch (ConnectionLostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		try {
+			in_ = connection_.getInputStream();
+		} catch (ConnectionLostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		if (in_.read() != ESTABLISH_CONNECTION) {
 			throw new ProtocolException("Got and unexpected input.");
+		
 		}
 		readExactly(4);
 		if (bufferIsIOIO()) {
@@ -544,8 +667,10 @@ public class pixelfirmware extends IOIOSwingApp implements ActionListener {
 			whatIsConnected_ = Protocol.PROTOCOL_BOOTLOADER;
 			readBootVersions();
 		} else {
+			combinedText = combinedText + "Device is neither a standard IOIO application nor a IOIO bootloader." + "\n";
+		    mainText.setText(combinedText);
 			throw new ProtocolException(
-					"Device is neighter a standard IOIO application nor a IOIO bootloader.");
+					"Device is neither a standard IOIO application nor a IOIO bootloader.");
 		}
 }
 
@@ -614,23 +739,26 @@ public class pixelfirmware extends IOIOSwingApp implements ActionListener {
 	}
 	}
 
-	@Override
+	
+	
+
+	/*@Override
 	public IOIOLooper createIOIOLooper(String connectionType, Object extra) {
 		// TODO Auto-generated method stub
 		return null;
-	}
+	}*/
 	
 	 
 
 	/*@Override
 	public IOIOLooper createIOIOLooper(String connectionType, Object extra) {
 		return new BaseIOIOLooper() {
-			private DigitalOutput led_;
+			//private DigitalOutput led_;
 
 			@Override
 			protected void setup() throws ConnectionLostException,
 					InterruptedException {
-				led_ = ioio_.openDigitalOutput(IOIO.LED_PIN, true);
+			//	led_ = ioio_.openDigitalOutput(IOIO.LED_PIN, true);
 				pixelFirmware = ioio_.getImplVersion(v.APP_FIRMWARE_VER);
 	  			pixelHardwareID = ioio_.getImplVersion(v.HARDWARE_VER);
 	  			
@@ -640,7 +768,7 @@ public class pixelfirmware extends IOIOSwingApp implements ActionListener {
 			@Override
 			public void loop() throws ConnectionLostException,
 					InterruptedException {
-				led_.write(!ledOn_);
+			//	led_.write(!ledOn_);
 				Thread.sleep(10);
 			}
 		};
