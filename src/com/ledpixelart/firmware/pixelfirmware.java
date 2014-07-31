@@ -25,8 +25,13 @@ import java.util.zip.ZipFile;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.ComponentOrientation;
 import java.awt.Container;
 import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -45,19 +50,18 @@ import java.util.zip.ZipFile;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.UIManager;
 
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
-
+import java.util.prefs.*;
 import java.awt.FlowLayout;
 
 //public class pixelfirmware extends IOIOSwingApp  {
@@ -72,8 +76,6 @@ public class pixelfirmware  {
 	    
 	private static VersionType v;
 	
-	
-	
 	private static final int ESTABLISH_CONNECTION = 0x00;
 	private static final int CHECK_INTERFACE = 0x01;
 	private static final int CHECK_INTERFACE_RESPONSE = 0x01;
@@ -82,6 +84,10 @@ public class pixelfirmware  {
 	private static final int WRITE_FINGERPRINT = 0x03;
 	private static final int WRITE_IMAGE = 0x04;
 	private static final int CHECKSUM = 0x04;
+	
+	private final static boolean shouldFill = true;
+	private final static boolean shouldWeightX = true;
+	private final static boolean RIGHT_TO_LEFT = false;
 
 	private static enum Protocol {
 		PROTOCOL_IOIO, PROTOCOL_BOOTLOADER
@@ -114,7 +120,6 @@ public class pixelfirmware  {
      
     private JLabel label;
     private JTextField textField;
-   // private JButton button;
      
     private JFileChooser fileChooser;
     
@@ -127,146 +132,228 @@ public class pixelfirmware  {
     
     private JFilePicker filePicker;
     private static JFrame frame;
-    private Container contentPane;
     private static JButton versionButton;
     private static JButton upgradeButton;
+    private static JLabel portLabel_;
+    
+    private static JCheckBox forceWriteCheckBox;
     
     private static String combinedText;
     private static String firmwareFilePath;
-
-	// Boilerplate main(). Copy-paste this code into any IOIOapplication.
-	public static void main(String[] args) throws Exception {
-		//new pixelfirmware().go(args);
-		setupGUI();
-		
-	}
-
-//	protected boolean ledOn_;
-
-	
-	//protected Window createMainWindow(String args[]) {
-	public static void setupGUI() {
-		// Use native look and feel.
-		try {
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (Exception e) {
-		}
-
-		frame = new JFrame("PIXEL Firmware Upgrade");
-		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-
-		Container contentPane = frame.getContentPane();
-		contentPane.setLayout(new BoxLayout(contentPane, BoxLayout.PAGE_AXIS));
-		
-		portText = new JTextArea("Overwrite here with PIXEL's Port");
-		portText.setBackground(Color.BLUE);
-		portText.setForeground(Color.WHITE);
-		contentPane.add(portText);	
-		
-		mainText = new JTextArea("Searching for PIXEL...");
-	    //mainText.setFont(new Font("Serif", Font.ITALIC, 16));
-		mainText.setLineWrap(true);
-		mainText.setWrapStyleWord(true);
-		mainText.setEditable(false);
-		contentPane.add(mainText);	
-		
-		//contentPane.setLayout(new FlowLayout());
-		 
-        // set up a file picker component
-        JFilePicker filePicker = new JFilePicker("Select Firmware File", "Browse...");
-        filePicker.setMode(JFilePicker.MODE_OPEN);
-        filePicker.addFileTypeFilter(".ioioapp", "Firmware Files");
-       // filePicker.addFileTypeFilter(".mp4", "MPEG-4 Videos");
-         
-        // access JFileChooser class directly
-        JFileChooser fileChooser = filePicker.getFileChooser();
-        fileChooser.setCurrentDirectory(new File("D:/"));
-         
-        // add the component to the frame
-        contentPane.add(filePicker);
-         
-       // contentPane.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-     //   contentPane.setSize(520, 100);
-       //contentPane.setLocationRelativeTo(null);    // center on screen
-		
-		versionButton = new JButton("Check Firmware Version");
-		versionButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-		contentPane.add(versionButton);
-		
-		upgradeButton = new JButton("Upgrade Firmware");
-		upgradeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-		contentPane.add(upgradeButton);
-		//versionButton.setActionCommand(BUTTON_PRESSED);
-		
-		contentPane.add(Box.createVerticalGlue());
-		contentPane.add(versionButton);
-		contentPane.add(upgradeButton);
-		contentPane.add(Box.createVerticalGlue());
-
-		// Display the window.
-		frame.setSize(800, 500);
-		frame.setLocationRelativeTo(null); // center it
-		frame.setVisible(true);
-		
-		versionButton.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e){
-            	/*firmwareFilePath = JFilePicker.getSelectedFilePath();
-    			combinedText = combinedText + "\n" + firmwareFilePath + "\n";
-    		    mainText.setText(combinedText);*/
-    		    
-    		   // portName_ = "/dev/tty.usbmodem1411"; 
-    		    portName_ = portText.getText();
-    		    command_ = Command.FINGERPRINT;
-    		    force_ = true;
-    		    
-    		    upgradeButton.setEnabled(false);
-    		    versionButton.setEnabled(false);
-    		   
-    				try {
-						connect(portName_);
-					} catch (IOException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-						combinedText = combinedText + "Could not find PIXEL" + "\n";
-		    		    mainText.setText(combinedText);
-					} catch (ProtocolException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-						combinedText = combinedText + "Could not find PIXEL" + "\n";
-		    		    mainText.setText(combinedText);
-					}
-    			
-    		    versionsCommand();
-    		    
-    		   // contentPane.showMessageDialog(frame, "thank you for using java");
     
+    private static Preferences prefs;
+    private static final String prefPort_ = "prefPort";  //Preference key for this package
+    private static String ourNodeName = "/com/ledpixelart/firmware";
+    
+    private static String serialPortInstructions = "- Enter the port PIXEL appears on your computer in the field above" + "\n"
+			+ "- Winddows: Open device manager and look for the COM port # next to the device called 'IOIO OTG', format will be COMXX. Ex. COM9 or COM14" + "\n" 
+			+ "- Mac OSX: Type < ls /dev/tty.usb* > from a command prompt, format will be /dev/tty.usbmodemXXXX. Ex. /dev/tty.usbmodem1411 or /dev/tty.usbmodem1421" + "\n" 
+			+ "- Raspberry Pi and LINUX: format will be IOIOX. Ex. IOIO0 or IOIO1" + "\n";
+ 
+	
+    public static void main(String[] args) {
+        //Schedule a job for the event-dispatching thread:
+        //creating and showing this application's GUI.
+        javax.swing.SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                createAndShowGUI();
             }
         });
-		
-		upgradeButton.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e){
-            	firmwareFilePath = JFilePicker.getSelectedFilePath();
-    			combinedText = combinedText + "\n" + firmwareFilePath + "\n";
+    }
+    
+    public static void addComponentsToPane(Container pane) {
+        if (RIGHT_TO_LEFT) {
+            pane.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+        }
+
+ 	pane.setLayout(new GridBagLayout());
+	GridBagConstraints c = new GridBagConstraints();
+	if (shouldFill) {
+	//natural height, maximum width
+	c.fill = GridBagConstraints.HORIZONTAL;
+	}
+	
+	if (shouldWeightX) {
+		c.weightx = 0.5;
+		}
+	
+	c.gridwidth = 1; //for the first row, each component should take up 1 column
+	
+	c.fill = GridBagConstraints.HORIZONTAL;
+	c.gridx = 0;
+	c.gridy = 0;
+	c.insets = new Insets(0,30,0,0);  //left and right padding
+	portLabel_ = new JLabel("PIXEL Port", JLabel.LEFT);
+	pane.add(portLabel_, c);
+	
+	
+	c.fill = GridBagConstraints.HORIZONTAL;
+	c.gridx = 1;
+	c.gridy = 0;
+	c.insets = new Insets(0,20,0,400);  //left and right padding
+	portText = new JTextArea(portName_);
+	portText.setForeground(Color.BLUE);
+	pane.add(portText, c);
+	
+	/// ********** the file picker component ***********************
+	c.insets = new Insets(0,0,0,0);  //leave some space on left and right side of buttons
+	c.gridwidth = 2; //from here on, each component should takes up 2 columns
+	
+	c.fill = GridBagConstraints.HORIZONTAL;
+	c.ipady = 0;      
+	c.gridx = 0;       
+	c.gridy = 1;       
+	// set up a file picker component
+    JFilePicker filePicker = new JFilePicker("Select Firmware File", "Browse...");
+    filePicker.setMode(JFilePicker.MODE_OPEN);
+    filePicker.addFileTypeFilter(".ioioapp", "Firmware Files"); //you can add another line too if you want to support multiple file types
+    // access JFileChooser class directly
+    JFileChooser fileChooser = filePicker.getFileChooser();
+    fileChooser.setCurrentDirectory(new File("D:/"));
+    pane.add(filePicker, c);
+	
+	//// ************ the check and upgrade firmware buttons ********************
+	c.insets = new Insets(10,200,0,200);  //leave some space on left and right side of buttons
+	
+	versionButton = new JButton("Check Firmware Version");
+	c.fill = GridBagConstraints.HORIZONTAL;
+	c.weightx = 0.5;
+	c.gridx = 0;
+	c.gridy = 2;
+	pane.add(versionButton, c);
+	
+	c.fill = GridBagConstraints.HORIZONTAL;
+	c.ipady = 20;      
+	c.gridx = 0;   
+	c.gridy = 3;     
+	upgradeButton = new JButton("UPGRADE FIRMWARE");
+	pane.add(upgradeButton, c);
+
+	//*************Force Write Check Box *******************************************
+	c.insets = new Insets(0,0,0,0);  //reset the padding
+	
+	c.fill = GridBagConstraints.HORIZONTAL;
+	c.weightx = 0.5;
+	c.gridx = 0;
+	c.gridy = 4;
+	forceWriteCheckBox = new JCheckBox("Force firmware write even if current firmware matches");
+	pane.add(forceWriteCheckBox, c);	
+	
+	//*************Main Text Area *******************************************
+	combinedText = "FIRMWARE UPGRADE INSTRUCTIONS\n"
+			+ "How to upgrade firmware video http://ledpixelart.com\n"
+		    + "STEP 1\n"
+			+ "- Move the toggle switch on the side of PIXEL towards the label 'PC USB'\n"
+			+ "- Power off PIXEL and remove the back case by unscrewing the 4 screws by hand\n"
+			+ "- While PIXEL is off, hold down the push button on PIXEL's circuit board and power on with the button still held down\n"
+			+ "- The green LED on PIXEL's circuit board will be on\n"
+			+ "- Release the button and the green LED will blink 3-4 times indicating PIXEL is ready to accept the new firmware\n"
+			+ "- Unplug the Bluetooth dongle and connect PIXEL to your PC or Mac using the supplied USB A-A cable (the cable with the large USB connectors on both ends)\n"
+			+ "STEP 2\n"
+			+  serialPortInstructions
+			+ "STEP 3\n"
+			+  "Select the firmware upgrade file with the extension .ioioapp and click < UPGRADE FIRMWARE >\n"
+			+ "STEP 4\n"
+			+  "- Put the back case back on tighening the 4 screws by hand (do not over-tighten or you'll crack the acrylic case)\n"
+			+  "- Unplug the USB cable and replace with the Bluetooth dongle\n"
+			+  "- Move the toggle switch on the side of PIXEL towards the label 'Bluetooth'\n"
+			+  "- Power PIXEL on and off\n";
+   		
+	c.fill = GridBagConstraints.HORIZONTAL;
+	c.weightx = 0.5;
+	c.gridx = 0;
+	c.gridy = 5;
+	
+	mainText = new JTextArea(combinedText);
+	Font font = new Font("Verdana", Font.PLAIN, 11);
+	mainText.setFont(font);
+	
+	mainText.setLineWrap(true);
+	mainText.setWrapStyleWord(true);
+	mainText.setEditable(false);
+	mainText.setBackground(Color.LIGHT_GRAY);
+	mainText.setForeground(Color.BLUE);
+	pane.add(mainText, c);
+	
+	// Display the window.
+	frame.setSize(900, 650);
+	frame.setLocationRelativeTo(null); // center it
+	frame.setVisible(true);
+	
+	versionButton.addActionListener(new ActionListener(){
+        @Override
+        public void actionPerformed(ActionEvent e){
+		    
+		    portName_ = portText.getText();
+		   
+				try {
+					connect(portName_);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+					combinedText = "Could not find PIXEL" + "\n";
+	    		    mainText.setText(combinedText);
+				} catch (ProtocolException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+					combinedText = "Could not find PIXEL" + "\n";
+	    		    mainText.setText(combinedText);
+				}
+			
+		    versionsCommand();
+		    
+		  /*  try {
+				hardReset();
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}*/
+		    
+		    tellUserRestart("Please close and restart this app if you need to run it again...");
+
+        }
+    });
+	
+	upgradeButton.addActionListener(new ActionListener(){
+        @Override
+        public void actionPerformed(ActionEvent e){
+        	firmwareFilePath = JFilePicker.getSelectedFilePath();
+		    prefs.put(prefPort_,portText.getText()); //let's write the prefs for the port
+		    force_ = forceWriteCheckBox.isSelected(); //whether or not we will over-write firmware even if the version already matches
+		    
+		    if (firmwareFilePath.equals("")) {
+		    	combinedText = "You must first select a firmware file" + "\n";
     		    mainText.setText(combinedText);
-    		    
-    		    portName_ = "/dev/tty.usbmodem1411"; 
-    		    command_ = Command.WRITE;
-    		    force_ = true;
-    		    
-    		    upgradeButton.setEnabled(false);
-    		    versionButton.setEnabled(false);
+		    }
+		    
+		    else if (portText.getText().equals("Enter PIXEL Port Here")) {
+		    	combinedText = "Oops... You forgot to enter the PIXEL Port\n\n"
+		    			+ serialPortInstructions + "\n";
+    		    mainText.setText(combinedText);
+		    }
+		    
+		    else if (!portText.getText().contains("dev") && !portText.getText().contains("DEV") //do we need dev if we have tty? TO DO test that
+		    		&& !portText.getText().contains("COM") && !portText.getText().contains("com")
+		    		&& !portText.getText().contains("tty") && !portText.getText().contains("TTY") 
+		    		&& !portText.getText().contains("ioio") && !portText.getText().contains("IOIO")) {
+		    	combinedText = "PIXEL PORT FORMAT IS NOT VALID\n\n"
+		    			+  serialPortInstructions + "\n";
+    		    mainText.setText(combinedText);
+		    }
+		    
+		    else { //ok we're good let's continue and write the firmware
+		    	combinedText = firmwareFilePath + "\n";
+    		    mainText.setText(combinedText);
     		   
-    				try {
-						connect(portName_);
-					} catch (IOException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					} catch (ProtocolException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					}
+				try {
+					connect(portName_);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (ProtocolException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
     			
     		    try {
 					writeCommand();
@@ -280,104 +367,61 @@ public class pixelfirmware  {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
+				
+				/*try {
+					hardReset();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}*/
     		    
-    		   // contentPane.showMessageDialog(frame, "thank you for using java");
-    
-            }
-        });
+    		    tellUserRestart("Please close and restart this app if you need to run it again...");
+    		    
+    		    
+		    }
+        }
+    });
+    }
+
+	
+	//protected Window createMainWindow(String args[]) {
+	public static void createAndShowGUI() {
+		// Use native look and feel.
+		try {
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch (Exception e) {
+		}
 		
-		
-		
-		//return frame;
+		prefs = Preferences.userRoot().node(ourNodeName); //let's get our preferences
+		String defaultPortValue = "Enter PIXEL Port Here"; //if the pref does not exist yet, use this
+		portName_ = prefs.get(prefPort_, defaultPortValue);
+	 		
+		frame = new JFrame("PIXEL Firmware Upgrade");
+		//frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+	    //Set up the content pane.
+	    addComponentsToPane(frame.getContentPane());
+
+	    //Display the window.
+	    frame.pack();
+	    frame.setVisible(true);
+		//return frame; //had this when I was trying to use IOIOSwing
 	}
 	
-	/*public void actionPerformed(ActionEvent event) {
-		if (event.getActionCommand().equals(BUTTON_PRESSED)) {
-			//ledOn_ = ((JToggleButton) event.getSource()).isSelected();
-			firmwareFilePath = filePicker.getSelectedFilePath();
-			combinedText = combinedText + "\n" + firmwareFilePath + "\n";
-		    mainText.setText(combinedText);
-		    
-		    portName_ = "/dev/tty.usbmodem1411"; 
-		    command_ = Command.FINGERPRINT;
-		    force_ = true;
-		    
-		    try {
-				connect(portName_);
-				
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (ProtocolException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-		    versionsCommand();
-		    try {
-				hardReset();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		   
-		    
-		    try {
-				connect(portName_);
-				switch (command_) {
-				case VERSIONS:
-					versionsCommand();
-					break;
-
-				case FINGERPRINT:
-					fingerprintCommand();
-					break;
-
-				case WRITE:
-					writeCommand();
-					break;
-				}
-				if (reset_) {
-					hardReset();
-				}
-			} catch (IOException e) {
-				System.err.println("Caught IOException. Exiting.");
-				System.exit(3);
-			} catch (ProtocolException e) {
-				System.err.println("Protocol error:");
-				System.err.println(e.getMessage());
-				System.err.println("Exiting.");
-				System.exit(4);
-			} catch (NoSuchAlgorithmException e) {
-				System.err.println("System cannot calculate MD5. Cannot proceed.");
-				System.exit(5);
-			}
-		    
-	
-		}
-	}*/
+	private static void tellUserRestart (String msg) {
+		combinedText = "\n" + combinedText + msg + "\n";
+	    mainText.setText(combinedText);
+	    upgradeButton.setEnabled(false);
+	    versionButton.setEnabled(false);
+	    forceWriteCheckBox.setEnabled(false);
+	    //pane.showMessageDialog(frame, "Eggs are not supposed to be green.");
+	}
 	
 	private void runFirmwareUpdate() {
 		combinedText = "PIXEL FOUND" + "\n"
 				+ "Current Firmware Version: " + pixelFirmware;
 		mainText.setText(combinedText);
-	}
-	
-	private static void printUsage() {
-		System.err.println("IOIODude V1.1");
-		System.err.println();
-		System.err.println("Usage:");
-		System.err.println("ioiodude <options> versions");
-		System.err.println("ioiodude <options> fingerprint");
-		System.err.println("ioiodude <options> write <ioioapp>");
-		System.err.println();
-		System.err.println("Valid options are:");
-		System.err
-				.println("--port=<name> The serial port where the IOIO is connected.");
-		System.err
-				.println("--reset Reset the IOIO out of bootloader mode when done.");
-		System.err
-				.println("--force Bypass fingerprint matching and force writing.");
 	}
 	
 	private static void hardReset() throws IOException {
@@ -388,7 +432,6 @@ public class pixelfirmware  {
 	private static void writeCommand() throws IOException, ProtocolException,
 			NoSuchAlgorithmException {
 		checkBootloaderProtocol();
-		//File file = new File(fileName_);
 		File file = new File(firmwareFilePath);
 		
 		ZipFile zip = new ZipFile(file, ZipFile.OPEN_READ);
@@ -398,8 +441,7 @@ public class pixelfirmware  {
 				System.err
 						.println("Application bundle does not include an image for the platform "
 								+ platformVersion_);
-				combinedText = combinedText + "\n" + "Application bundle does not include an image for the platform"
-						+ platformVersion_;
+				combinedText = combinedText + "\n" + "**** THIS PIXEL FIRMWARE FILE IS NOT VALID ****\n\n";
 			    mainText.setText(combinedText);
 				return;
 			}
@@ -414,31 +456,41 @@ public class pixelfirmware  {
 
 				if (Arrays.equals(currentFp, fileFp)) {
 					System.err.println("Fingerprint match - skipping write.");
-					combinedText = combinedText + "\n" + "Firmware fingerprint match - skipping write - your firmware is already up to date \n.";
+					combinedText = combinedText + "\n" + "Firmware fingerprint match - skipping write - your firmware is already up to date\n\n";
 				    mainText.setText(combinedText);
 					return;
 				} else {
 					System.err.println("Fingerprint mismatch.");
-					combinedText = combinedText + "\n" + "Fingerprint mismatch.";
-				    mainText.setText(combinedText);
+					//combinedText = combinedText + "\n" + "Fingerprint mismatch.";
+				    //mainText.setText(combinedText);
 				}
 			}
 
 			System.err.println("Writing image...");
-			combinedText = combinedText + "\n" + "Writing image...";
+			combinedText = "Writing Firmware...";
 		    mainText.setText(combinedText);
 			short checksum = writeImage(zip.getInputStream(entry),
 					(int) entry.getSize());
 			if (readChecksum() != checksum) {
+				combinedText = combinedText + "Bad checksum. PIXEL firmware image is possibly corrupt.";
+			    mainText.setText(combinedText);
 				throw new ProtocolException(
 						"Bad checksum. IOIO image is possibly corrupt.");
 			}
 			System.err.println("Writing fingerprint...");
-			combinedText = combinedText + "\n" + "Writing fingerprint...";
+			Font font = new Font("Verdana", Font.BOLD, 11);
+			mainText.setFont(font);
+			combinedText = combinedText + "\n" + "Writing Firmware...";
 		    mainText.setText(combinedText);
 			writeFingerprint(fileFp);
+			mainText.setForeground(Color.BLUE); //change the color to green letting the user know all is good
+			//TO DO make font bigger
 			System.err.println("Done.");
-			combinedText = combinedText + "\n" + "Done.";
+			combinedText = combinedText + "\n" + "DONE\n\n" 
+					+  "- Put the back case back on tighening the 4 screws by hand (do not over-tighten or you'll crack the acrylic case)\n"
+					+  "- Unplug the USB cable and replace with the Bluetooth dongle\n"
+					+  "- Move the toggle switch on the side of PIXEL towards the label 'Bluetooth'\n"
+					+  "- Power PIXEL on and off\n\n";
 		    mainText.setText(combinedText);
 		} finally {
 			zip.close();
@@ -479,7 +531,8 @@ public class pixelfirmware  {
 
 	private static void printProgress(int progress) {
 		System.err.print('[');
-		mainText.setText("[");
+		combinedText = combinedText + "[";
+		mainText.setText(combinedText);
 		for (int i = 0; i < PROGRESS_SIZE; ++i) {
 			if (i < progress) {
 				System.err.print('#');
@@ -487,8 +540,8 @@ public class pixelfirmware  {
 			    mainText.setText(combinedText);
 			} else {
 				System.err.print(' ');
-				//combinedText = "\' \'";
-			    mainText.setText(" ");
+				combinedText = combinedText + " ";
+			    mainText.setText(combinedText);
 			}
 		}
 		System.err.print(']');
@@ -559,15 +612,14 @@ public class pixelfirmware  {
 			ProtocolException {
 		if (whatIsConnected_ != Protocol.PROTOCOL_BOOTLOADER) {
 			
-			combinedText = combinedText + "PIXEL is not in bootloader mode!\n"
-					+ "Enter bootloader mode by:\n"
-					+ "- Use the USB A-A cable to USB connect PIXEL to your PC or Mac\n"
-					+ "- Move the toggle switch to PC USB\n"
-					+ "- Power off PIXEL and remove the back case.\n"
-					+ "- While PIXEL is off, hold down the button on PIXEL's board and then turn on POWER\n"
-					+ "- The green LED should be on constantly.\n"
-					+ "- Release the button and the green LED should blink 3 times.\n"
-					+ "Now, try again.";
+			combinedText = combinedText + "**** PIXEL WAS DETECTED BUT IS NOT IN FIRMWARE UPDATE MODE ****\n\n"
+					+ "Enter firmware upgrade mode by:\n"
+					+ "- Unplug the Bluetooth dongle and connect PIXEL to your PC or Mac using the supplied USB A-A cable (the cable with the large USB connectors on both ends)\n"
+					+ "- Move the toggle switch on the side of PIXEL towards the label 'PC USB'\n"
+					+ "- Power off PIXEL and remove the back case by unscrewing the 4 screws by hand\n"
+					+ "- While PIXEL is off, hold down the push button on PIXEL's circuit board and power on with the button still held down\n"
+					+ "- The green LED on PIXEL's circuit board will be on\n"
+					+ "- Release the button and the green LED will blink 3-4 times indicating PIXEL is ready to accept the new firmware\n";
 		    mainText.setText(combinedText);
 			
 			throw new ProtocolException(
@@ -580,7 +632,6 @@ public class pixelfirmware  {
 							+ "- Disconnect 'boot' from 'GND'. The stat LED should blink a few times.\n"
 							+ "Now, try again.");
 		}
-	
 	    
 		out_.write(CHECK_INTERFACE);
 		out_.write("BOOT0001".getBytes());
@@ -598,30 +649,23 @@ public class pixelfirmware  {
 	private static void versionsCommand() {
 		switch (whatIsConnected_) {
 		case PROTOCOL_IOIO:
-			System.err.println("IOIO Application detected.");
-			combinedText = combinedText + "PIXEL detected.";
+			System.err.println("PIXEL FOUND\n\n");
+			combinedText =  "PIXEL FOUND\n";
 		    mainText.setText(combinedText);
 			break;
 
 		case PROTOCOL_BOOTLOADER:
-			System.err.println("PIXEL Bootloader detected.");
-			combinedText = combinedText + "PIXEL in Bootloader mode detected.";
+			System.err.println("PIXEL is in firmware upgrade mode");
+			combinedText = "PIXEL is in firmware upgrade mode. Please power PIXEL on and off if you're down with the firmware upgrade and ready to use PIXEL.\n\n";
 		    mainText.setText(combinedText);
 			break;
 		}
 		System.err.println();
-		combinedText = combinedText + "\n";
-	    mainText.setText(combinedText);
-		System.err.println("Hardware version: " + hardwareVersion_);
-		combinedText = combinedText + "Hardware version: " + hardwareVersion_ + "\n";
-	    mainText.setText(combinedText);
-		System.err.println("Bootloader version: " + bootloaderVersion_);
-		combinedText = combinedText + "Bootloader version: " + bootloaderVersion_ + "\n";
-	    mainText.setText(combinedText);
+		
 		switch (whatIsConnected_) {
 		case PROTOCOL_IOIO:
 			System.err.println("Application version: " + applicationVersion_);
-			combinedText = combinedText + "Firmware version: " + applicationVersion_ + "\n";
+			combinedText = combinedText + "FIRMWARE VERSION: " + applicationVersion_ + "\n";
 		    mainText.setText(combinedText);
 			break;
 
@@ -631,6 +675,15 @@ public class pixelfirmware  {
 		    mainText.setText(combinedText);
 			break;
 		}
+		
+		combinedText = combinedText + "\n";
+	    mainText.setText(combinedText);
+		System.err.println("Hardware Version: " + hardwareVersion_);
+		combinedText = combinedText + "Hardware Version: " + hardwareVersion_ + "\n";
+	    mainText.setText(combinedText);
+		System.err.println("Bootloader Version: " + bootloaderVersion_);
+		combinedText = combinedText + "Bootloader Version: " + bootloaderVersion_ + "\n\n";
+	    mainText.setText(combinedText);
 	}
 	
 	private static void connect(String port) throws IOException,
@@ -667,10 +720,10 @@ public class pixelfirmware  {
 			whatIsConnected_ = Protocol.PROTOCOL_BOOTLOADER;
 			readBootVersions();
 		} else {
-			combinedText = combinedText + "Device is neither a standard IOIO application nor a IOIO bootloader." + "\n";
+			combinedText = combinedText + "Device is neither a standard PIXEL application nor a PIXEL bootloader." + "\n";
 		    mainText.setText(combinedText);
 			throw new ProtocolException(
-					"Device is neither a standard IOIO application nor a IOIO bootloader.");
+					"Device is neither a standard PIXEL application nor a PIXEL bootloader.");
 		}
 }
 
@@ -738,9 +791,6 @@ public class pixelfirmware  {
 		super(message);
 	}
 	}
-
-	
-	
 
 	/*@Override
 	public IOIOLooper createIOIOLooper(String connectionType, Object extra) {
