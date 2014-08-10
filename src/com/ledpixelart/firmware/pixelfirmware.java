@@ -284,35 +284,53 @@ public class pixelfirmware  {
         @Override
         public void actionPerformed(ActionEvent e){
 		    
-		    portName_ = portText.getText();
-		   
-				try {
-					connect(portName_);
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-					combinedText = "Could not find PIXEL" + "\n";
-	    		    mainText.setText(combinedText);
-				} catch (ProtocolException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-					combinedText = "Could not find PIXEL" + "\n";
-	    		    mainText.setText(combinedText);
-				}
-			
-		    versionsCommand();
-		    
-		  /*  try {
-				hardReset();
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}*/
-		    
-		    tellUserRestart("Please close and restart this app if you need to run it again...");
+  		    portName_ = portText.getText();
+  		    
+  		    if (portText.getText().equals("Enter PIXEL Port Here")) {
+  		    	combinedText = "Oops... You forgot to enter PIXEL's Port\n\n"
+  		    			+ serialPortInstructions + "\n";
+      		    mainText.setText(combinedText);
+  		    }
+  		    
+  		    else if (!portText.getText().contains("dev") && !portText.getText().contains("DEV") //do we need dev if we have tty? TO DO test that
+  		    		&& !portText.getText().contains("COM") && !portText.getText().contains("com")
+  		    		&& !portText.getText().contains("tty") && !portText.getText().contains("TTY") 
+  		    		&& !portText.getText().contains("ioio") && !portText.getText().contains("IOIO")) {
+  		    	combinedText = "PIXEL PORT FORMAT IS NOT VALID\n\n"
+  		    			+  serialPortInstructions + "\n";
+      		    mainText.setText(combinedText);
+  		    }
+  		    
+  		    else {
+  		    	prefs.put(prefPort_,portText.getText()); //let's write the prefs for the port
+  				try {
+  					connect(portName_);
+  				} catch (IOException e1) {
+  					// TODO Auto-generated catch block
+  					e1.printStackTrace();
+  					combinedText = "Could not find " + "\n";
+  	    		    mainText.setText(combinedText);
+  				} catch (ProtocolException e1) {
+  					// TODO Auto-generated catch block
+  					e1.printStackTrace();
+  					combinedText = "Could not find " + "\n";
+  	    		    mainText.setText(combinedText);
+  				}
+  			
+  		    versionsCommand();
+  		    
+  		  /*  try {
+  				hardReset();
+  			} catch (IOException e1) {
+  				// TODO Auto-generated catch block
+  				e1.printStackTrace();
+  			}*/
+  		    
+  		    tellUserRestart("Please close and restart this app if you need to run it again...");
 
-        }
-    });
+  		    }
+          }
+      });
 	
 	upgradeButton.addActionListener(new ActionListener(){
         @Override

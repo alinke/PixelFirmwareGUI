@@ -3,7 +3,7 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/IOIOLibPC"/>
-	<classpathentry kind="lib" path="C:/Users/alinke63257/Documents/GitHub/PixelFirmwareGUI/lib/jna-4.0.0.jar"/>
-	<classpathentry kind="lib" path="C:/Users/alinke63257/Documents/GitHub/PixelFirmwareGUI/lib/purejavacomm-0.0.21.jar"/>
+	<classpathentry kind="lib" path="/Users/al/Documents/eclipsepc/HelloIOIOSwing/lib/jna-4.0.0.jar"/>
+	<classpathentry kind="lib" path="/Users/al/Documents/eclipsepc/HelloIOIOSwing/lib/purejavacomm-0.0.21.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
