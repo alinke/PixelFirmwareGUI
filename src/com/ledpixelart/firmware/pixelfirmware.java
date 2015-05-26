@@ -240,11 +240,11 @@ public class pixelfirmware  {
 	pane.add(forceWriteCheckBox, c);	
 	
 	//*************Main Text Area *******************************************
-	combinedText = "FIRMWARE UPGRADE INSTRUCTIONS\n"
+	combinedText = "FIRMWARE UPGRADE INSTRUCTIONS\n\n"
 			+ "How to upgrade firmware video http://ledpixelart.com\n"
 		    + "STEP 1\n"
 			+ "- Move the toggle switch on the side of PIXEL towards the label 'PC USB'\n"
-			+ "- Power off PIXEL and remove the back case by unscrewing the 4 screws by hand\n"
+			+ "- Power off PIXEL\n"
 			+ "- While PIXEL is off, hold down the push button on PIXEL's circuit board and power on with the button still held down\n"
 			+ "- The green LED on PIXEL's circuit board will be on\n"
 			+ "- Release the button and the green LED will blink 3-4 times indicating PIXEL is ready to accept the new firmware\n"
@@ -254,9 +254,7 @@ public class pixelfirmware  {
 			+ "STEP 3\n"
 			+  "Select the firmware upgrade file with the extension .ioioapp and click < UPGRADE FIRMWARE >\n"
 			+ "STEP 4\n"
-			+  "- Put the back case back on tighening the 4 screws by hand (do not over-tighten or you'll crack the acrylic case)\n"
-			+  "- Unplug the USB cable and replace with the Bluetooth dongle\n"
-			+  "- Move the toggle switch on the side of PIXEL towards the label 'Bluetooth'\n"
+			+  "- Unplug the USB cable and move the toggle switch to 'BT' and plug in the Bluetooth dongle\n"
 			+  "- Power PIXEL on and off\n";
    		
 	c.fill = GridBagConstraints.HORIZONTAL;
@@ -634,21 +632,20 @@ public class pixelfirmware  {
 					+ "Enter firmware upgrade mode by:\n"
 					+ "- Unplug the Bluetooth dongle and connect PIXEL to your PC or Mac using the supplied USB A-A cable (the cable with the large USB connectors on both ends)\n"
 					+ "- Move the toggle switch on the side of PIXEL towards the label 'PC USB'\n"
-					+ "- Power off PIXEL and remove the back case by unscrewing the 4 screws by hand\n"
+					+ "- Power off PIXEL\n"
 					+ "- While PIXEL is off, hold down the push button on PIXEL's circuit board and power on with the button still held down\n"
 					+ "- The green LED on PIXEL's circuit board will be on\n"
 					+ "- Release the button and the green LED will blink 3-4 times indicating PIXEL is ready to accept the new firmware\n";
 		    mainText.setText(combinedText);
 			
 			throw new ProtocolException(
-					"PIXEL is not in bootloader mode!\n"
-							+ "Enter bootloader mode by:\n"
-							+ "- Power off the IOIO.\n"
-							+ "- Connect the 'boot' pin to 'GND'.\n"
-							+ "- Power on the IOIO.\n"
-							+ "- The stat LED should be on constantly.\n"
-							+ "- Disconnect 'boot' from 'GND'. The stat LED should blink a few times.\n"
-							+ "Now, try again.");
+					"Enter firmware upgrade mode by:\n"
+							+ "- Unplug the Bluetooth dongle and connect PIXEL to your PC or Mac using the supplied USB A-A cable (the cable with the large USB connectors on both ends)\n"
+							+ "- Move the toggle switch on the side of PIXEL towards the label 'PC USB'\n"
+							+ "- Power off PIXEL\n"
+							+ "- While PIXEL is off, hold down the push button on PIXEL's circuit board and power on with the button still held down\n"
+							+ "- The green LED on PIXEL's circuit board will be on\n"
+							+ "- Release the button and the green LED will blink 3-4 times indicating PIXEL is ready to accept the new firmware\n");
 		}
 	    
 		out_.write(CHECK_INTERFACE);
